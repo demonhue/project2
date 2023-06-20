@@ -1,37 +1,13 @@
-function multiply(a, b) {
-  return a * b;
-}
-
 function divide(a, b) {
-  return a / b;
+return a / b;
 }
 
 function sqrt(a) {
-  return Math.sqrt(a);
-}
-
-export { multiply, divide, sqrt };
-/*
-function sub(a,b){
-    return a-b;
-}
-
-
-function add(a,b){
-    return a+b;
+return Math.sqrt(a);
 }
 
 function multiply(a, b) {
-  return a * b;
+  return a*b;
 }
 
-function divide(a, b) {
-  return a / b;
-}
-
-function sqrt(a) {
-  return Math.sqrt(a);
-}
-
-export { multiply, divide, sqrt, sub as subtract, add as addition};
-*/
+export {divide, sqrt, multiply as mul};

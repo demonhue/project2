@@ -5,8 +5,6 @@ function f_1() {
 }
 f_1();
 imp_1_local();
-export {};
-export default var_d = 11;
 
 const p = 4;
 

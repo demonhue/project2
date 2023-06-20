@@ -16,6 +16,7 @@ function combine(a, b) {
 while (true) {
   let allExports = [];
   let importVariable = new Set();
+  let doNotDisturb = new Set();
 
   inputFileLocations.forEach((file) => {
     const input = fs.readFileSync(file).toString();
@@ -29,17 +30,28 @@ while (true) {
 
     for (const exportedVariable of exportedVariables)
       allExports.push(exportedVariable);
-    for (const importedVariable of importedVariables)
-      importVariable.add(
-        combine(importedVariable.from, importedVariable.importedName)
-      );
+    for (const importedVariable of importedVariables){
+      if(importedVariable.importedName === undefined){
+        doNotDisturb.add(importedVariable.from);
+      }
+      else {
+        importVariable.add(
+          combine(importedVariable.from, importedVariable.importedName)
+        );
+      }
+    }
   });
 
   const unusedExports = allExports.filter(
-    (value) => !importVariable.has(combine(value.from, value.exportedName))
+    (value) => {
+      if(importVariable.has(combine(value.from, value.exportedName)))return false;
+      else if(doNotDisturb.has(value.from))return false;
+      else if(value.localName === undefined && value.exportedName === undefined)return false;//ExportAll Case
+      else return true;
+    }
   );
 
-  console.log(unusedExports);
+  console.log("unusedExports:",unusedExports);
 
   if (unusedExports.length === 0) break;
 

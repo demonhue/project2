@@ -3,25 +3,16 @@ const path = require("path");
 const traverse = require("@babel/traverse").default;
 const {parser,generator} = require("./utils");
 
-function combine(a, b, c) {
-  return a + "+" + b + "+" + c;
-}
-
 function removeExportsFromFile(input, unusedExports) {
   let ast = parser(input);
 
   let unusedExportsSet = new Set();
 
   for (let unusedExport of unusedExports) {
-    unusedExportsSet.add(
-      combine(unusedExport.localName, unusedExport.exportedName, unusedExport.relativeAddressOfSource)
-    );
+    unusedExportsSet.add(unusedExport.exportName);
   }
-
-  function check({localName,exportedName,relativeAddressOfSource}){
-    return unusedExportsSet.has(
-      combine(localName,exportedName,relativeAddressOfSource)
-    );
+  function check(exportName){
+    return unusedExportsSet.has(exportName);
   }
 
   traverse(ast, {
@@ -37,32 +28,22 @@ function removeExportsFromFile(input, unusedExports) {
       const {node} = path;
       if(node.declaration){
        	if(node.declaration.id){//Case1
-          const obj = {
-            localName: node.declaration.id.name,
-            exportedName: node.declaration.id.name,
-            //from: fileLocation,
-          };
-          if(check(obj)){
+          const exportName = node.declaration.id.name;
+          if(check(exportName)){
             path.remove();
           }
         }
         else if(node.declaration.declarations){
           node.declaration.declarations = node.declaration.declarations.filter(value => {
             if(value.id.name){//Case2
-              const obj = {
-                localName: value.id.name,
-                exportedName: value.id.name,
-              };
-              return !check(obj);
+              const exportName = value.id.name;
+              return !check(exportName);
             }
             else if(value.id.properties){//Case6
               value.id.properties = value.id.properties.filter(x => {
-                const obj ={
-                  localName: value.init.name,
-                  exportedName: x.key.name,
-                  //from: fileLocation,
-                };
-                return !check(obj);
+                //console.log(x);
+                const exportName = x.value.name;
+                return !check(exportName);
               });
               return value.id.properties.length !== 0;
             }
@@ -73,12 +54,8 @@ function removeExportsFromFile(input, unusedExports) {
                   count++;
                   return null;
                 }
-                const obj = {
-                  localName: value.init.name,
-                  exportedName: x.name,
-                  //from: fileLocation,
-                };
-                if(check(obj)){count++;return null;}
+                const exportName = x.name;
+                if(check(exportName)){count++;return null;}
                 return x;
               });
               //console.log(count,value.id.)
@@ -92,38 +69,22 @@ function removeExportsFromFile(input, unusedExports) {
         if(node.source == null){
             node.specifiers = node.specifiers.filter(value => {
               if(value.exported.type === "StringLiteral"){//Case3
-                const obj = {
-                  localName: value.local.name,
-                  exportedName: value.exported.value,
-                  //from: fileLocation,
-                };
-                return !check(obj);
+                const exportName = value.exported.value;
+                return !check(exportName);
               }else if(value.exported.type === "Identifier"){//Case4
-                const obj = {
-                  localName: value.local.name,
-                  exportedName: value.exported.name,
-                  //from: fileLocation,
-                };
-                return !check(obj);
+                const exportName = value.exported.name;
+                return !check(exportName);
               }
             });
           }
         else {
           node.specifiers = node.specifiers.filter(value => {
             if(value.type === "ExportNamespaceSpecifier"){//Case7
-              const obj = {
-                localName: undefined,
-                exportedName: value.exported.name,
-                relativeAddressOfSource: path.node.source.value
-              };
-              return !check(obj);
+              const exportName = value.exported.name;
+              return !check(exportName);
             } else if(value.type === "ExportSpecifier"){//Case8
-              const obj = {
-                localName: value.local.name,
-                exportedName: value.exported.name,
-                relativeAddressOfSource: path.node.source.value
-              };
-              return !check(obj);
+              const exportName = value.exported.name;
+              return !check(exportName);
             }
           });
         }
@@ -131,12 +92,8 @@ function removeExportsFromFile(input, unusedExports) {
       }
     },
     ExportDefaultDeclaration(path){
-      const obj = {
-        localName: undefined,
-        exportedName:"default",
-        //from: fileLocation
-      };
-      if(check(obj))path.remove();
+      const exportName = "default";
+      if(check(exportName))path.remove();
     }
   });
 

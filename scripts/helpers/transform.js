@@ -30,7 +30,6 @@ function transform(ast) {
       JSXelements.add(path.node.name);
     },
   });
-
   /*
     TERMS:
 
@@ -53,7 +52,6 @@ function transform(ast) {
     Getting bindings for each scope
     */
   let bindings = getBindings(ast);
-
   /*
     getting name corresponding to each binding
     */

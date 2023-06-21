@@ -10,15 +10,15 @@ returns ast as ouput
 //'./src/main.js'
 function getOptimizedCode(input) {
   let ast = parser(input);
-
-  let output = input,
+  let print = (input === 'function logg(x) {\n  console.log(x);\n}\n');
+  let output = {code:input},
     lastOutputCode = "";
   /*
     putting a limit to the number of loops so that
     we don't get infinite loop
     */
   let maxIteration = 10;
-
+  
   /*
     number of loops for convergence
     */
@@ -29,7 +29,7 @@ function getOptimizedCode(input) {
     */
   while (output.code !== lastOutputCode && maxIteration--) {
     ++totalIterations;
-    transform(ast);
+    transform(ast,print);
     lastOutputCode = output.code;
     output = generator(ast);
     ast = parser(output.code);

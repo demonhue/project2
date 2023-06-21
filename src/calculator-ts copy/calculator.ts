@@ -15,9 +15,6 @@ function sqrt(num1: number): number{
     return Math.sqrt(num1);
 }
 
-export default function add(num1: number, num2: number): number{
-    return num1+ num2;
-}
 export * from "./log.ts";
 export {multiply, divide, sqrt};
 

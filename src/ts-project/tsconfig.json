@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es2016",                                 
+    "jsx": "preserve",
+    "module": "commonjs",                                
+    
+    "allowJs": true,                                 
+    "allowImportingTsExtensions": true,
+    "noEmit": true,                                   
+    "esModuleInterop": true,                            
+    "forceConsistentCasingInFileNames": true,           
+
+    "strict": true,                                      
+    "noImplicitAny": true,                           
+    "noImplicitThis": true,                           
+
+    /* Completeness */
+    "skipDefaultLibCheck": true,                      
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "./calculator-ts/*": ["./calculator-ts/*"]
+    }
+  },
+}

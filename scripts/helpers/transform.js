@@ -22,7 +22,15 @@ function getBindings(ast) {
   return bindings;
 }
 
-function transform(ast) {
+function removeConstantViolations(binding){
+  if(binding?.constantViolations){
+    for (let constantViolation of binding.constantViolations) {
+      constantViolation.remove();
+    }
+  }
+}
+
+function transform(ast,file) {
   let JSXelements = new Set();
 
   traverse(ast, {
@@ -90,10 +98,9 @@ function transform(ast) {
         !bindings[key].referenced
       ) {
         if (isNotArgument(bindings[key])) {
+          console.log(`removing: ${getName(bindings[key])} from file ${file}`);
           const parent = bindings[key].path.parentPath;
-          for (let constantViolation of bindings[key].constantViolations) {
-            constantViolation.remove();
-          }
+          removeConstantViolations(bindings[key]);
           bindings[key].path.remove();
           if (
             parent?.node?.type === "ImportDeclaration" &&
@@ -102,26 +109,41 @@ function transform(ast) {
             parent.remove();
         }
         if (bindings[key].path?.node?.id?.type === "ArrayPattern") {
-          for (let i = 0; i < bindings[key].path.node.id.elements.length; i++) {
-            if (
-              bindings[key].path.node.id.elements[i]?.start ===
-              bindings[key].identifier.start
-            ) {
-              bindings[key].path.node.id.elements[i] = null;
+          for (let i = 0; i < bindings[key].path.node.id.elements.length; i++){
+            if(bindings[key].path.node.id.elements[i]!=null) {
+              if(bindings[key].path.node.id.elements[i].type === "Identifier"){
+                if (
+                  bindings[key].path.node.id.elements[i]?.start ===
+                  bindings[key].identifier.start
+                ) {
+                  bindings[key].path.node.id.elements[i] = null;
+                }
+              }
+              else if(bindings[key].path.node.id.elements[i].type === "RestElement"){
+                if (
+                  bindings[key].path.node.id.elements[i]?.argument?.start ===
+                  bindings[key].identifier.start
+                ) {
+                  bindings[key].path.node.id.elements[i] = null;
+                }
+              }
             }
           }
-          if (
-            bindings[key].path.node.id.elements.every(
-              (element) => element === null
-            )
-          )
+          if (bindings[key].path.node.id.elements.every((element) => element == null)){
             bindings[key].path.remove();
+          }
         }
         if (bindings[key].path?.node?.id?.type === "ObjectPattern") {
-          bindings[key].path.node.id.properties = bindings[
-            key
-          ].path.node.id.properties.filter(
-            (x) => x.value.name !== bindings[key].identifier.name
+          bindings[key].path.node.id.properties = bindings[key].path.node.id.properties.filter(
+            (x) => {
+              if(x.type==="ObjectProperty"){
+                return (x.value.name !== bindings[key].identifier.name);
+              }
+              else if(x.type === "RestElement"){
+                return (x.argument.name !== bindings[key].identifier.name);
+              }
+              else return true;
+            }
           );
           if (bindings[key].path.node.id.properties.length === 0) {
             bindings[key].path.remove();
@@ -133,12 +155,12 @@ function transform(ast) {
   /*
     generating the code from the altered ast
     and writing the result in the output file
-    */
+  */
 }
 
 exports.default = transform;
 exports.getBindings = getBindings;
-
+exports.removeConstantViolations = removeConstantViolations;
 /*
 1)Currently, it doesn't remove any variable whose name matches 
 with any of the JSX element which will leave redundancies 

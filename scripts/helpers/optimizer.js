@@ -8,11 +8,9 @@ returns ast as ouput
 */
 //const input = fs.readFileSync(fileLocation).toString();
 //'./src/main.js'
-function getOptimizedCode(input) {
-  let ast = parser(input);
-  let print = (input === 'function logg(x) {\n  console.log(x);\n}\n');
+function getOptimizedCode(input,file) {  
   let output = {code:input},
-    lastOutputCode = "";
+    lastOutputCode = undefined;
   /*
     putting a limit to the number of loops so that
     we don't get infinite loop
@@ -26,15 +24,19 @@ function getOptimizedCode(input) {
 
   /*
     looping until there is no optimizations possible
-    */
+  */
   while (output.code !== lastOutputCode && maxIteration--) {
     ++totalIterations;
-    transform(ast,print);
-    lastOutputCode = output.code;
-    output = generator(ast);
-    ast = parser(output.code);
-    // console.log("output",output.code);
-    // console.log("lastOutputCode",lastOutputCode);
+    try {
+      let ast = parser(input);
+      transform(ast,file);
+      lastOutputCode = output.code;
+      output = generator(ast);
+    }catch(e){
+      console.log({error:e,file: file, failSafe: "returning original input", iteration: totalIterations});
+      //throw e;
+      return {code: input};
+    }
   }
 
   console.log(totalIterations);

@@ -2,17 +2,47 @@ const fs = require("fs");
 const path = require("path");
 const traverse = require("@babel/traverse").default;
 const {parser,generator} = require("./utils");
+const {getBindings,removeConstantViolations} = require("./transform");
 
 function removeExportsFromFile(input, unusedExports) {
   let ast = parser(input);
+  const bindings = getBindings(ast);
+
+  function getStartOfVariablesReferencedMoreThanOnce(ast){
+    let startOfVariablesReferencedMoreThanOnce = new Set();
+    for(let key of Object.keys(bindings)){
+      if(bindings[key].references>1){
+        startOfVariablesReferencedMoreThanOnce.add(parseInt(key,10));
+      }
+    }
+    return startOfVariablesReferencedMoreThanOnce;
+  }
+
+  const startOfVariablesReferencedMoreThanOnce = getStartOfVariablesReferencedMoreThanOnce(ast);
+  //console.log("##",startOfVariablesReferencedMoreThanOnce);
 
   let unusedExportsSet = new Set();
 
   for (let unusedExport of unusedExports) {
     unusedExportsSet.add(unusedExport.exportName);
   }
-  function check(exportName){
+
+  function isUnusedExport(exportName){
     return unusedExportsSet.has(exportName);
+  }
+
+  function isReferenced(start){
+    return startOfVariablesReferencedMoreThanOnce.has(start);
+  }
+  //console.log(bindings);
+  function checkAndRemoveConstantViolations(exportName,start){
+    //console.log(start);
+    if(isUnusedExport(exportName) && !isReferenced(start)){
+      //console.log(exportName,start,bindings[start]);
+      if(start!=undefined)removeConstantViolations(bindings[start]);
+      return true;
+    }
+    return false;
   }
 
   traverse(ast, {
@@ -29,7 +59,8 @@ function removeExportsFromFile(input, unusedExports) {
       if(node.declaration){
        	if(node.declaration.id){//Case1
           const exportName = node.declaration.id.name;
-          if(check(exportName)){
+          const start = node.declaration.id.start;
+          if(checkAndRemoveConstantViolations(exportName,start)){
             path.remove();
           }
         }
@@ -37,13 +68,15 @@ function removeExportsFromFile(input, unusedExports) {
           node.declaration.declarations = node.declaration.declarations.filter(value => {
             if(value.id.name){//Case2
               const exportName = value.id.name;
-              return !check(exportName);
+              const start = value.id.start;
+              return !checkAndRemoveConstantViolations(exportName,start);
             }
             else if(value.id.properties){//Case6
               value.id.properties = value.id.properties.filter(x => {
                 //console.log(x);
                 const exportName = x.value.name;
-                return !check(exportName);
+                const start = x.value.start;
+                return !checkAndRemoveConstantViolations(exportName,start);
               });
               return value.id.properties.length !== 0;
             }
@@ -55,7 +88,8 @@ function removeExportsFromFile(input, unusedExports) {
                   return null;
                 }
                 const exportName = x.name;
-                if(check(exportName)){count++;return null;}
+                const start = x.start;
+                if(checkAndRemoveConstantViolations(exportName,start)){count++;return null;}
                 return x;
               });
               //console.log(count,value.id.)
@@ -70,10 +104,12 @@ function removeExportsFromFile(input, unusedExports) {
             node.specifiers = node.specifiers.filter(value => {
               if(value.exported.type === "StringLiteral"){//Case3
                 const exportName = value.exported.value;
-                return !check(exportName);
+                const start = value.exported.start;
+                return !checkAndRemoveConstantViolations(exportName,start);
               }else if(value.exported.type === "Identifier"){//Case4
                 const exportName = value.exported.name;
-                return !check(exportName);
+                const start = value.exported.start;
+                return !checkAndRemoveConstantViolations(exportName,start);
               }
             });
           }
@@ -81,10 +117,12 @@ function removeExportsFromFile(input, unusedExports) {
           node.specifiers = node.specifiers.filter(value => {
             if(value.type === "ExportNamespaceSpecifier"){//Case7
               const exportName = value.exported.name;
-              return !check(exportName);
+              const start = value.exported.start;
+              return !checkAndRemoveConstantViolations(exportName,start);
             } else if(value.type === "ExportSpecifier"){//Case8
               const exportName = value.exported.name;
-              return !check(exportName);
+              const start = value.exported.start;
+              return !checkAndRemoveConstantViolations(exportName,start);
             }
           });
         }
@@ -93,7 +131,9 @@ function removeExportsFromFile(input, unusedExports) {
     },
     ExportDefaultDeclaration(path){
       const exportName = "default";
-      if(check(exportName))path.remove();
+      if(checkAndRemoveConstantViolations(exportName,(path.node.declaration.id?.start))){
+        path.remove();
+      }
     }
   });
 

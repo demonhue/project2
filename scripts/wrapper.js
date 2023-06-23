@@ -5,24 +5,33 @@ const removeExportsFromFile = require("./helpers/removeExportsFromFile").default
 const fileFinder = require("./helpers/fileFinder").default;
 const getOptimizedCode = require("./helpers/optimizer").default;
 
-//const inputFolderLocation = path.join(__dirname, "../src/React-Typescript-Project/src");///////////////////////
-const inputFolderLocation = path.join(__dirname, "../src/ts-project");
+const relativePathOfFolder = "../src/vibesition/src"; //TODO
+const relativePathOfTsConfigFile = "./src/vibesition/tsconfig.json"; //TODO
+
+const inputFolderLocation = path.join(__dirname, relativePathOfFolder);
 const inputFileLocations = fileFinder(inputFolderLocation);
 
-let maxIteration = 20;
+let maxBigIteration = 10;
 let totalBigIteration = 0;
-while (maxIteration--) {
+while (maxBigIteration--) {
   totalBigIteration++;
   inputFileLocations.forEach((file) => {
     const input = fs.readFileSync(file).toString();
-    const output = getOptimizedCode(input);
-    fs.writeFileSync(file, output.code, "utf8");
+    try {
+      const output = getOptimizedCode(input,file);
+      fs.writeFileSync(file, output.code, "utf8");
+    }catch(e){
+      console.log("wrapper.js",{error:e,file:file});
+    }
   });
 
-  //let unusedExportsByFile = analyzeTsConfig('./src/React-Typescript-Project/tsconfig.json');//////////////////////
-  let unusedExportsByFile = analyzeTsConfig('./src/ts-project/tsconfig.json');
-  //Processing unusedExportsByFile
+  let unusedExportsByFile = analyzeTsConfig(relativePathOfTsConfigFile);
+  //Processing unusedExportsByFile (ignoring pages folder and if exportName is undefined or empty)
   for(let key of Object.keys(unusedExportsByFile)){
+    if(key.includes("/pages/")){
+      delete unusedExportsByFile[key];
+      continue;
+    }
     unusedExportsByFile[key] = unusedExportsByFile[key].filter(value => !(value.exportName == undefined || value.exportName.length === 0));
     if(unusedExportsByFile[key].length === 0)delete unusedExportsByFile[key];
   }

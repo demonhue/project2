@@ -28,7 +28,7 @@ function getOptimizedCode(input,file) {
   while (output.code !== lastOutputCode && maxIteration--) {
     ++totalIterations;
     try {
-      let ast = parser(input);
+      let ast = parser(output.code);
       transform(ast,file);
       lastOutputCode = output.code;
       output = generator(ast);

@@ -5,11 +5,13 @@ const removeExportsFromFile = require("./helpers/removeExportsFromFile").default
 const fileFinder = require("./helpers/fileFinder").default;
 const getOptimizedCode = require("./helpers/optimizer").default;
 
-const relativePathOfFolder = "../src/vibesition/src"; //TODO
+const relativePathOfFolder = "../src/vibesition/src"; //TODO or directly put absolute path in inputFolderLocation
 const relativePathOfTsConfigFile = "./src/vibesition/tsconfig.json"; //TODO
 
 const inputFolderLocation = path.join(__dirname, relativePathOfFolder);
 const inputFileLocations = fileFinder(inputFolderLocation);
+
+let lastUnusedExportsStringified;
 
 let maxBigIteration = 10;
 let totalBigIteration = 0;
@@ -43,6 +45,15 @@ while (maxBigIteration--) {
   }
   console.log(unusedExportsByFile);
   if(Object.keys(unusedExportsByFile).length==0)break;
+
+  const unusedExportsStringified = JSON.stringify(unusedExportsByFile);
+  if(lastUnusedExportsStringified!== undefined && unusedExportsStringified === lastUnusedExportsStringified){
+    console.log("Ending Big Iteration because unable to remove these unused exports", unusedExportsByFile);
+    break;
+  }
+  else {
+    lastUnusedExportsStringified = unusedExportsStringified;
+  }
 }
 
 console.log("totalBigIteration: ",totalBigIteration);

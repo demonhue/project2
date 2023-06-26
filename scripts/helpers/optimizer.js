@@ -8,38 +8,38 @@ returns ast as ouput
 */
 //const input = fs.readFileSync(fileLocation).toString();
 //'./src/main.js'
-function getOptimizedCode(input,file) {  
+function getOptimizedCode(input,maxSmallIteration,file) {  
   let output = {code:input},
     lastOutputCode = undefined;
   /*
-    putting a limit to the number of loops so that
+    maxSmallIteration is there to put
+    a limit to the number of loops so that
     we don't get infinite loop
-    */
-  let maxIteration = 10;
-  
+  */
+ 
   /*
     number of loops for convergence
-    */
-  let totalIterations = 0;
+  */
+  let totalSmallIterations = 0;
 
   /*
     looping until there is no optimizations possible
   */
-  while (output.code !== lastOutputCode && maxIteration--) {
-    ++totalIterations;
+  while (output.code !== lastOutputCode && totalSmallIterations<=maxSmallIteration) {
+    ++totalSmallIterations;
     try {
       let ast = parser(output.code);
       transform(ast,file);
       lastOutputCode = output.code;
       output = generator(ast);
     }catch(e){
-      console.log({error:e,file: file, failSafe: "returning original input", iteration: totalIterations});
+      console.log({error:e,file: file, failSafe: "returning original input", iteration: totalSmallIterations});
       //throw e;
       return {code: input};
     }
   }
 
-  console.log(totalIterations);
+  console.log(totalSmallIterations);
   return output;
 }
 

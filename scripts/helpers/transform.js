@@ -2,20 +2,19 @@ const traverse = require("@babel/traverse").default;
 
 function getBindings(ast) {
   let bindings = {};
-  let s = new Set();
+  let setOfScopes = new Set();
   traverse(ast, {
     enter(path) {
-      if (path.node.type === "Identifier") {
-        s.add(path.scope.bindings);
-      }
+      setOfScopes.add(path.scope.bindings);
+    }
       // else if(path.node.type === "BlockStatement"){
       //     console.log("__________________\n",path.node,"___________________\nParent____________________\n",path.parent);
       //     //if(path.node.body.length === 0)path.remove();
       // }
     },
-  });
+  );
 
-  for (let value of s) {
+  for (let value of setOfScopes) {
     for (let key of Object.keys(value))
       bindings[value[key].identifier.start] = value[key];
   }
@@ -32,7 +31,6 @@ function removeConstantViolations(binding){
 
 function transform(ast,file) {
   let JSXelements = new Set();
-
   traverse(ast, {
     JSXIdentifier(path) {
       JSXelements.add(path.node.name);

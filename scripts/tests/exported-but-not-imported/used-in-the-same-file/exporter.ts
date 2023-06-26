@@ -1,17 +1,16 @@
-export function add_one(a){
-  return a+1;
+export interface SquareConfig {
+  color?: string;
+  width?: number;
+}
+function createSquare(config: SquareConfig): { color: string; area: number } {
+  let newSquare = { color: "white", area: 100 };
+  if (config.color) {
+    newSquare.color = config.color;
+  }
+  if (config.width) {
+    newSquare.area = config.width * config.width;
+  }
+  return newSquare;
 }
 
-export default function (a,b){
-  return a+b;
-}
-
-export let arr = [1,2,3];
-
-export let [,aaa,bbb] = [1,2,3,4,5], var_1 = 5;
-
-console.log(aaa);
-
-let a = 20, aa = 10;
-console.log(aa);
-export {a as aa};
+createSquare();

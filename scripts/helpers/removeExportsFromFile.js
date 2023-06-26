@@ -6,6 +6,8 @@ function removeExportsFromFile(input, unusedExports) {
   const ast = parser(input);
   const bindings = getBindings(ast);
 
+  //console.log(bindings);
+
   function getStartOfVariablesReferencedMoreThanOnce(){
     let startOfVariablesReferencedMoreThanOnce = new Set();
     for(let key of Object.keys(bindings)){

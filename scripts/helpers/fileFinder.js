@@ -16,14 +16,19 @@ function isJSFile(filename) {
 
 const inputFileLocations = [];
 
+const skipDirectories = ["node_modules"];
+
 function traverseDir(dir, files) {
     fs.readdirSync(dir).forEach((file) => {
+        if(skipDirectories.includes(file)){
+            return;
+        }
         let fullPath = path.join(dir, file);
-    if (fs.lstatSync(fullPath).isDirectory()) {
-        traverseDir(fullPath);
-    } else if (isJSFile(file)) {
-        inputFileLocations.push(fullPath);
-    }
+        if (fs.lstatSync(fullPath).isDirectory()) {
+            traverseDir(fullPath);
+        } else if (isJSFile(file)) {
+            inputFileLocations.push(fullPath);
+        }
   });
 }
 

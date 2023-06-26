@@ -40,7 +40,7 @@ while (totalBigIteration<=maxBigIteration) {
     }
   });
 
-  let unusedExportsByFile = analyzeTsConfig(relativePathOfTsConfigFile);
+  let unusedExportsByFile = analyzeTsConfig(relativePathOfTsConfigFile,["--ignoreLocallyUsed=true"]);
   //Processing unusedExportsByFile (ignoring pages folder and if exportName is undefined or empty)
   for(let key of Object.keys(unusedExportsByFile)){
     if(isUnderAnExcludedDirectory(key)){

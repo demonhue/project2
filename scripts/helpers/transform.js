@@ -60,26 +60,24 @@ function transform(ast,file) {
   let bindings = getBindings(ast);
   /*
     getting name corresponding to each binding
-    */
+    doesn't get name for each identifier
+    I am gonna skip those identifiers whose names
+    it can't get for example arguments f(a,b);
+  */
   function getName(binding) {
     return binding.path?.node?.id?.name ?? binding.path?.node?.local?.name;
-  }
-
-  /*
-    checking whether the binding is part of argument for a 
-    function or method or not
-    (implementation might be changed later)
-  */
-  function isNotArgument(binding) {
-    return getName(binding) !== undefined;
   }
 
   /*
     checking whether there exists a JSX element with the same
     name as the binding
     */
-  function isNotJSXelement(binding) {
-    return !JSXelements.has(getName(binding));
+  function isJSXelement(binding) {
+    return JSXelements.has(getName(binding));
+  }
+
+  function isFunctionOrClassExpression(binding){
+    return (binding.path.node.type === "ClassExpression" || binding.path.node.type === "FunctionExpression");
   }
 
   /*
@@ -90,70 +88,88 @@ function transform(ast,file) {
     then removing unreferenced bindings and all their assignments
     Also removing the import declaration with no imports(i.e. removing "import  from './modulePath' ")
     */
-  for (let key of Object.keys(bindings))
-    if (isNotJSXelement(bindings[key])) {
-      /*if(!JSXelements.has(bindings[key].path.node.name))*/ if (
-        !bindings[key].referenced
-      ) {
-        if (isNotArgument(bindings[key])) {
-          console.log(`removing: ${getName(bindings[key])} from file ${file}`);
-          const parent = bindings[key].path.parentPath;
-          removeConstantViolations(bindings[key]);
-          bindings[key].path.remove();
-          if (
-            parent?.node?.type === "ImportDeclaration" &&
-            parent.node.specifiers.length === 0
-          )
-            parent.remove();
-        }
-        if (bindings[key].path?.node?.id?.type === "ArrayPattern") {
-          for (let i = 0; i < bindings[key].path.node.id.elements.length; i++){
-            if(bindings[key].path.node.id.elements[i]!=null) {
-              if(bindings[key].path.node.id.elements[i].type === "Identifier"){
-                if (
-                  bindings[key].path.node.id.elements[i]?.start ===
-                  bindings[key].identifier.start
-                ) {
-                  bindings[key].path.node.id.elements[i] = null;
-                }
-              }
-              else if(bindings[key].path.node.id.elements[i].type === "RestElement"){
-                if (
-                  bindings[key].path.node.id.elements[i]?.argument?.start ===
-                  bindings[key].identifier.start
-                ) {
-                  bindings[key].path.node.id.elements[i] = null;
-                }
-              }
-            }
-          }
-          if (bindings[key].path.node.id.elements.every((element) => element == null)){
-            bindings[key].path.remove();
-          }
-        }
-        if (bindings[key].path?.node?.id?.type === "ObjectPattern") {
-          bindings[key].path.node.id.properties = bindings[key].path.node.id.properties.filter(
-            (x) => {
-              if(x.type==="ObjectProperty"){
-                return (x.value.name !== bindings[key].identifier.name);
-              }
-              else if(x.type === "RestElement"){
-                return (x.argument.name !== bindings[key].identifier.name);
-              }
-              else return true;
-            }
-          );
-          if (bindings[key].path.node.id.properties.length === 0) {
-            bindings[key].path.remove();
-          }
-        }
+  for (let key of Object.keys(bindings)){
+    if (isJSXelement(bindings[key])){
+      continue;
+    }
+    if(isFunctionOrClassExpression(bindings[key])){
+      continue;
+    }
+    if(bindings[key].referenced){
+      continue;
+    }
+    if(getName(bindings[key]) !== undefined){
+      console.log(`removing: ${getName(bindings[key])} from file ${file}`);
+      removeConstantViolations(bindings[key]);
+      bindings[key].path.remove();
+      const parent = bindings[key].path.parentPath;
+      if (
+        parent?.node?.type === "ImportDeclaration" &&
+        parent.node.specifiers.length === 0
+      ){
+        parent.remove();
       }
     }
 
-  /*
-    generating the code from the altered ast
-    and writing the result in the output file
-  */
+
+    if (bindings[key].path?.node?.id?.type === "ArrayPattern") {
+      for (let i = 0; i < bindings[key].path.node.id.elements.length; i++){
+        if(bindings[key].path.node.id.elements[i]!=null) {
+          if(bindings[key].path.node.id.elements[i].type === "Identifier"){
+            if (
+              bindings[key].path.node.id.elements[i]?.start ===
+              bindings[key].identifier.start
+            ) {
+              console.log(`removing: ${bindings[key].identifier.name} from file ${file}`);
+              bindings[key].path.node.id.elements[i] = null;
+            }
+          }
+          else if(bindings[key].path.node.id.elements[i].type === "RestElement"){
+            if (
+              bindings[key].path.node.id.elements[i]?.argument?.start ===
+              bindings[key].identifier.start
+            ) {
+              console.log(`removing: ${bindings[key].identifier.name} from file ${file}`);
+              bindings[key].path.node.id.elements[i] = null;
+            }
+          }
+        }
+      }
+      if (bindings[key].path.node.id.elements.every((element) => element == null)){
+        bindings[key].path.remove();
+      }
+    }
+
+    
+    if (bindings[key].path?.node?.id?.type === "ObjectPattern") {
+      bindings[key].path.node.id.properties = bindings[key].path.node.id.properties.filter(
+        (x) => {
+          if(x.type==="ObjectProperty"){
+            if(x.value.name === bindings[key].identifier.name){
+              console.log(`removing: ${x.value.name} from file ${file}`);
+              return false;
+            }
+            else {
+              return true;
+            }
+          }
+          else if(x.type === "RestElement"){
+            if(x.argument.name === bindings[key].identifier.name){
+              console.log(`removing: ${x.argument.name} from file ${file}`);
+              return false;
+            }
+            else {
+              return true;
+            }
+          }
+          else return true;
+        }
+      );
+      if (bindings[key].path.node.id.properties.length === 0) {
+        bindings[key].path.remove();
+      }
+    }
+  }
 }
 
 exports.default = transform;

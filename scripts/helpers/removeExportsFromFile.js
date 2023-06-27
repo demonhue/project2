@@ -55,6 +55,7 @@ function removeExportsFromFile(input, unusedExports) {
           const exportName = node.declaration.id.name;
           const start = node.declaration.id.start;
           if(isUselessExport(exportName,start)){
+            console.log(`Removing export ${exportName}`);
             removeConstantViolations(bindings[start]);
             path.remove();
           }
@@ -65,6 +66,7 @@ function removeExportsFromFile(input, unusedExports) {
               const exportName = value.id.name;
               const start = value.id.start;
               if(isUselessExport(exportName,start)){
+                console.log(`Removing export ${exportName}`);
                 removeConstantViolations(bindings[start]);
                 return false;
               } else {
@@ -77,6 +79,7 @@ function removeExportsFromFile(input, unusedExports) {
                 const exportName = x.value.name;
                 const start = x.value.start;
                 if(isUselessExport(exportName,start)){
+                  console.log(`Removing export ${exportName}`);
                   removeConstantViolations(bindings[start]);
                   return false;
                 } else {
@@ -95,6 +98,7 @@ function removeExportsFromFile(input, unusedExports) {
                 const exportName = x.name;
                 const start = x.start;
                 if(isUselessExport(exportName,start)){
+                  console.log(`Removing export ${exportName}`);
                   removeConstantViolations(bindings[start]);
                   count++;
                   return null;
@@ -115,6 +119,7 @@ function removeExportsFromFile(input, unusedExports) {
                 const exportName = value.exported.value;
                 const start = value.exported.start;
                 if(isUselessExport(exportName,start)){
+                  console.log(`Removing export ${exportName}`);
                   removeConstantViolations(bindings[start]);
                   return false;
                 } else {
@@ -124,6 +129,7 @@ function removeExportsFromFile(input, unusedExports) {
                 const exportName = value.exported.name;
                 const start = value.exported.start;
                 if(isUselessExport(exportName,start)){
+                  console.log(`Removing export ${exportName}`);
                   removeConstantViolations(bindings[start]);
                   return false;
                 } else {
@@ -138,6 +144,7 @@ function removeExportsFromFile(input, unusedExports) {
               const exportName = value.exported.name;
               const start = value.exported.start;
               if(isUselessExport(exportName,start)){
+                console.log(`Removing export ${exportName}`);
                 removeConstantViolations(bindings[start]);
                 return false;
               } else {
@@ -147,6 +154,7 @@ function removeExportsFromFile(input, unusedExports) {
               const exportName = value.exported.name;
               const start = value.exported.start;
               if(isUselessExport(exportName,start)){
+                console.log(`Removing export ${exportName}`);
                 removeConstantViolations(bindings[start]);
                 return false;
               } else {
@@ -162,6 +170,7 @@ function removeExportsFromFile(input, unusedExports) {
       const exportName = "default";
       const start = path.node.declaration.id?.start;
       if(isUselessExport(exportName,start)){
+        console.log(`Removing export ${exportName}`);
         removeConstantViolations(bindings[start]);
         path.remove();
       }

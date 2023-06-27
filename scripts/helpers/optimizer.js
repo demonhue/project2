@@ -16,7 +16,7 @@ function getOptimizedCode(input,maxSmallIteration,file) {
     a limit to the number of loops so that
     we don't get infinite loop
   */
- 
+
   /*
     number of loops for convergence
   */
@@ -35,12 +35,10 @@ function getOptimizedCode(input,maxSmallIteration,file) {
     }catch(e){
       console.log({error:e,file: file, failSafe: "returning original input", iteration: totalSmallIterations});
       //throw e;
-      return {code: input};
+      return {output: {code: input}, totalSmallIterations: totalSmallIterations};
     }
   }
-
-  console.log(totalSmallIterations);
-  return output;
+  return {output: output, totalSmallIterations: totalSmallIterations};
 }
 
 exports.default = getOptimizedCode;
